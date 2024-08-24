@@ -6,18 +6,32 @@ const WebSocket = require('ws');
 class CharacterAI {
   async connect(token) {
     this.token = token;
-    this.account.me = (await this.account.getMe()).user;
+    // this.account.me = (await this.account.getMe()).user;
 
-    this.ws = new WebSocket('wss://neo.character.ai/ws/', {
+    const requests = new Map();
+    const ws = new WebSocket('wss://neo.character.ai/ws/', {
       headers: {
         'Authorization': `Token ${this.token}`,
       },
     });
 
-    const requests = new Map();
-    // this.ws.requests = requests;
+    this.ws = ws;
+    this.ws.requests = requests;
 
-    this.ws.on('message', (data) => {
+    ws.on('close', (code, reason) => {
+      console.log(`Character AI Websocket closed with ${code}: ${reason.toString()}`);
+      console.log('Reconnecting...');
+      this.connect(this.token);
+    });
+
+    ws.on('open', () => {
+      setInterval(() => {
+        const data = { 'command': 'ping' };
+        this.send(JSON.stringify(data));
+      }, 3e5);
+    });
+
+    ws.on('message', (data) => {
       try {
         data = JSON.parse(data);
 
@@ -46,7 +60,7 @@ class CharacterAI {
     //   return request?.responses[request.responses.length - 1];
     // };
 
-    this.ws.sendAndReceive = function sendAndReceive(command, payload, callback) {
+    ws.sendAndReceive = function sendAndReceive(command, payload, callback) {
       return new Promise((resolve, reject) => {
         const requestId = uuidv4();
         const data = { 'command': command, 'request_id': requestId, 'payload': payload };
@@ -72,7 +86,7 @@ class CharacterAI {
     //   console.log(data.toString());
     // });
 
-    this.ws.asyncOn = function(event) {
+    ws.asyncOn = function(event) {
       return new Promise((resolve, reject) => {
         this.once(event, (data) => {
           try {
@@ -91,7 +105,7 @@ class CharacterAI {
       });
     };
 
-    // this.ws.sendAndReceive = async function(command, payload) {
+    // ws.sendAndReceive = async function(command, payload) {
     //   if (this.readyState === this.CONNECTING) {
     //     await this.asyncOn('open');
     //   }
@@ -107,7 +121,8 @@ class CharacterAI {
     //   return response;
     // };
 
-    await this.ws.asyncOn('open');
+    await ws.asyncOn('open');
+    return ws;
   }
 
   users = new Methods.Users(this);
