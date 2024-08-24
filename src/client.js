@@ -27,7 +27,7 @@ class CharacterAI {
     ws.on('open', () => {
       setInterval(() => {
         const data = { 'command': 'ping' };
-        this.send(JSON.stringify(data));
+        this.ws.send(JSON.stringify(data));
       }, 3e5);
     });
 
