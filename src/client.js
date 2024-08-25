@@ -6,7 +6,7 @@ const WebSocket = require('ws');
 class CharacterAI {
   async connect(token) {
     this.token = token;
-    // this.account.me = (await this.account.getMe()).user;
+    this.account.me = (await this.account.getMe()).user;
 
     const requests = new Map();
     const ws = new WebSocket('wss://neo.character.ai/ws/', {
