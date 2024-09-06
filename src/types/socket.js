@@ -8,28 +8,32 @@ class Socket extends Method {
     super(client);
 
     this.socket = null;
-    // this.authState = 'unauthenticated';
     this.requests = new Map();
     this.queue = [];
 
-    this.socketTimeout = 900000;
-    this.requestTimeout = 30000;
-    // this.heartbeatInterval = 0;
-    this.retryAttemps = 0;
-    this.retryTimeout = 0;
+    this.socketTimeout = null;
+    this.socketTimeoutDelay = 900000;
 
-    this.resetSocketTimeout();
-    this.connect();
+    this.requestTimeoutDelay = 30000;
+
+    // this.heartbeatInterval = null;
+    // this.heartbeatIntervalDelay = 300000;
+
+    this.retryAttemps = 0;
+    this.retryTimeout = null;
+
+    // this.connect();
   }
 
   resetSocketTimeout() {
-    if (this.socketTimeout > 0) {
-      this.socketTimeout = setTimeout(() => {
-        this.disconnect();
-      }, this.socketTimeout);
-    }
-
     clearTimeout(this.socketTimeout);
+
+    if (this.socketTimeoutDelay > 0) {
+      this.socketTimeout = setTimeout(() => {
+        console.log('timeout');
+        this.disconnect();
+      }, this.socketTimeoutDelay);
+    }
   }
 
   // async authenticate() {
@@ -72,6 +76,7 @@ class Socket extends Method {
 
   connect() {
     this.disconnect();
+    this.resetSocketTimeout();
 
     this.socket = new WebSocket('wss://neo.character.ai/ws/', {
       headers: {
@@ -80,14 +85,14 @@ class Socket extends Method {
     });
 
     this.socket.on('open', () => {
-      console.log('socket connected');
+      console.log('[Character AI] Socket connected');
       this.retryAttemps = 0;
 
-      if (this.heartbeatInterval > 0) {
-        this.heartbeatInterval = setInterval(() => {
-          this.socket.send(JSON.stringify({ command: 'ping' }));
-        }, this.heartbeatInterval);
-      }
+      // if (this.heartbeatInterval > 0) {
+      //   this.heartbeatInterval = setInterval(() => {
+      //     this.socket.send(JSON.stringify({ command: 'ping' }));
+      //   }, this.heartbeatInterval);
+      // }
 
       while (this.queue.length > 0) {
         const requestId = this.queue.shift();
@@ -108,16 +113,18 @@ class Socket extends Method {
     // });
 
     this.socket.on('close', (code, reason) => {
-      console.log('socket closed', code, reason.toString());
+      console.log('[Character AI] Socket closed', code, reason.toString());
 
-      // this.checkAuthentication();
-      this.disconnect();
-      // this.raiseErrorCallbacksForPendingRequests();
+      if (code !== 1005) {
+        // this.checkAuthentication();
+        this.disconnect();
+        // this.raiseErrorCallbacksForPendingRequests();
 
-      this.retryTimeout = setTimeout(() => {
-        this.retryAttemps++;
-        this.connect();
-      }, 500 * 2 ** this.retryAttemps);
+        this.retryTimeout = setTimeout(() => {
+          this.retryAttemps++;
+          this.connect();
+        }, 500 * 2 ** this.retryAttemps);
+      }
     });
 
     this.socket.on('message', (data) => {
@@ -168,9 +175,9 @@ class Socket extends Method {
       setTimeout(() => {
         if (this.requests.has(requestId)) {
           this.requests.delete(requestId);
-          // reject(new Error(`Request timed out for requestId: ${requestId}`));
+          reject(new Error(`Request timed out for requestId: ${requestId}`));
         }
-      }, this.requestTimeout);
+      }, this.requestTimeoutDelay);
     });
   }
 
