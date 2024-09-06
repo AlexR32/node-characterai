@@ -9,25 +9,45 @@ class Characters extends Method {
     return data.character;
   }
 
+  async recent() {
+    const data = await this.client.utils.request('get', 'chat/characters/recent/');
+    return data.character;
+  }
+
+  async search(query) {
+    const data = await this.client.utils.request('get', `chat/characters/search/?query=${query}`);
+    return data.characters;
+  }
+
   async upvoted() {
     const data = await this.client.utils.request('get', 'chat/user/characters/upvoted/');
     return data.characters;
   }
 
-  async getCategory(name) {
+  async categories() {
+    const data = await this.client.utils.request('get', 'chat/character/categories/');
+    return data.categories;
+  }
+
+  async curatedCategory(name) {
     const data = await this.client.utils.request('get', 'chat/curated_categories/characters/');
     if (name) return data.characters_by_curated_category[name];
     return data.characters_by_curated_category;
   }
 
-  async getRecommended() {
+  async trending() {
     const data = await this.client.utils.request('get', 'chat/characters/trending/');
     return data.trending_characters;
   }
 
-  async getTrending() {
+  async recommended() {
     const data = await this.client.utils.request('get', 'recommendation/v1/user', null, true);
-    return data.character;
+    return data.characters;
+  }
+
+  async featured() {
+    const data = await this.client.utils.request('get', 'recommendation/v1/featured', null, true);
+    return data.characters;
   }
 
   async createChar(name, greeting, tgt, title, visibility, copyable, description, definition, avatarPath) {

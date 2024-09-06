@@ -5,21 +5,21 @@ class Utilities extends Method {
   async request(method, url, data, isNeo, multipart) {
     const headers = {
       'Authorization': `Token ${this.client.token}`,
-      // 'Content-Type': multipart ? 'multipart/form-data' : 'application/json',
     };
 
-    url = `https://plus.character.ai/${url}`;
-    if (isNeo) url = url.replace('plus', 'neo');
+    const baseURL = `https://${isNeo ? 'neo' : 'plus'}.character.ai/`;
     if (multipart) headers['Content-Type'] = 'multipart/form-data';
 
-    const response = await axios({
+    const config = {
+      baseURL: baseURL,
       url: url,
       method: method,
       headers: headers,
       data: data,
       withCredentials: true,
-    });
+    };
 
+    const response = await axios(config);
     return response.data;
   }
 

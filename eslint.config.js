@@ -1,4 +1,3 @@
-
 const globals = require('globals');
 const pluginJs = require('@eslint/js');
 const stylisticJs = require('@stylistic/eslint-plugin-js');
